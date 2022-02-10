@@ -26,7 +26,7 @@ else:
 print("Checkpoints loaded.")
 
 #Extract video frames
-frames = get_video_frames("video/room4-sparse.mp4", target_size = TARGET_SIZE, inc = 30)
+frames = get_video_frames("video/room4-sitting.mp4", target_size = TARGET_SIZE, inc = 30)
 print("Frames extracted.")
 frames = frames[0:200]
 print("Frames: ", len(frames))
