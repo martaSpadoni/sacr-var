@@ -7,11 +7,11 @@ from modules.models import RetinaFaceModel
 from modules.utils import pad_input_image, recover_pad_output
 from utilities import apply_boxes, get_video_frames, save_video, load_yaml
 
-TARGET_SIZE = (1200, 675)
+TARGET_SIZE = (1000, 562)
 
 #Build model using SSD-MobileNetV2
 config = load_yaml("configs/retinaface_mbv2.yaml")
-model = RetinaFaceModel(config, training = False, iou_th = 0.7, score_th = 0.7)
+model = RetinaFaceModel(config, training = False, iou_th = 0.5, score_th = 0.7)
 print("Model built.")
 
 #Load weights of Wider-Face trained network
