@@ -38,10 +38,10 @@ def apply_boxes(img, labels):
     _img = np.array(img)
     h, w, _ = _img.shape
     for label in labels:
-        x1 = int(label[0] * w)
-        y1 = int(label[1] * h)
-        x2 = int(label[2] * w)
-        y2 = int(label[3] * h)
+        x1 = max(0, int(label[0] * w) - 15)
+        y1 = max(0, int(label[1] * h) - 15)
+        x2 = min(w, int(label[2] * w) + 15)
+        y2 = min(h, int(label[3] * h) + 15)
         cv.rectangle(_img, (x1,y1), (x2,y2), (0, 255, 0), 2)
     return _img
 
