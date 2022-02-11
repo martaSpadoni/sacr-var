@@ -2,7 +2,6 @@ import cv2 as cv
 import numpy as np
 import time
 import tensorflow as tf
-import pickle
 
 from tensorflow.keras.models import load_model
 from keras.applications import resnet

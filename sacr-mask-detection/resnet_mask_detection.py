@@ -32,13 +32,14 @@ clf = load_model("models/resnet50.h5")
 print("Classifier loaded.")
 
 #Extract video frames
-frames = get_video_frames("video/room4-sitting.mp4", target_size = TARGET_SIZE, inc = 30)
+frames = get_video_frames("video/room4-sparse.mp4", target_size = TARGET_SIZE, inc = 30)[:500]
 print("Frames extracted.")
 print("Frames: ", len(frames))
 
 cv.namedWindow("preview")
 
 #Inference
+boxed_frames = []
 print("Start inferences.")
 for i, frame in enumerate(frames):
     start = time.time()
@@ -46,15 +47,21 @@ for i, frame in enumerate(frames):
     prediction = model(padded_frame[np.newaxis, ...]).numpy()
     result = recover_pad_output(prediction, padding)
     img = cv.cvtColor(frames[i], cv.COLOR_RGB2BGR)
-    faces = get_faces(img, result)
+    faces = get_faces(img, result, margin = 20)
     resized_faces = [cv.resize(f, (224, 224), interpolation=cv.INTER_CUBIC) for f in faces]
     processed_faces = [resnet.preprocess_input(np.expand_dims(f, axis=0)) for f in resized_faces]
     predictions = [1 if clf.predict(f)[0][0] < 0.8 else 0 for f in processed_faces]
     boxed_frame = apply_boxes(img, result, predictions)
     end = time.time()
-    cv.putText(boxed_frame, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
+    _img = np.array(boxed_frame)
+    boxed_frames.append(boxed_frame)
+    cv.putText(_img, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
     key = cv.waitKey(20)
     if key == 27:
         break
-    cv.imshow("image", boxed_frame)  
+    cv.imshow("image", _img)  
 print("Inference finished.")
+
+#Save video
+save_video(boxed_frames)
+print("Video saved.")
