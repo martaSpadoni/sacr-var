@@ -71,7 +71,7 @@ def get_faces(img, bboxes, margin = 15):
 
 def save_video(frames, video_path="video/output.mp4"):
     h, w, _ = frames[0].shape
-    out = cv.VideoWriter(video_path, cv.VideoWriter_fourcc(*"DIVX"), 15, (w, h))
+    out = cv.VideoWriter(video_path, cv.VideoWriter_fourcc(*"DIVX"), 30, (w, h))
     for i in range(len(frames)):
         out.write(frames[i])
     out.release()
