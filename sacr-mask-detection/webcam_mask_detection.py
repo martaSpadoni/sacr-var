@@ -32,32 +32,44 @@ with open("models/SVC-model.pkl", 'rb') as file:
     clf = pickle.load(file)
 print("Classifier loaded.")
 
-#Extract video frames
-frames = get_video_frames("video/room4-sitting.mp4", target_size = TARGET_SIZE, inc = 30)
-print("Frames extracted.")
-frames = frames[0:200]
-print("Frames: ", len(frames))
-
+#Start webcam
 cv.namedWindow("preview")
+vc = cv.VideoCapture(0)
+rval, frame = vc.read() if vc.isOpened() else False, None
 
-#Inference
-print("Start inferences.")
-for i, frame in enumerate(frames):
+while rval:
+    #Start
     start = time.time()
+    rval, frame = vc.read()
+    
+    #Preprocess frame
+    frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     padded_frame, padding = pad_input_image(frame, 32)
+    
+    #Face inference
     prediction = model(padded_frame[np.newaxis, ...]).numpy()
     result = recover_pad_output(prediction, padding)
-    img = cv.cvtColor(frames[i], cv.COLOR_RGB2BGR)
+    img = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+    
+    #Face mask inference
     faces = get_faces(img, result)
     gray_faces = [cv.cvtColor(f, cv.COLOR_BGR2GRAY) for f in faces]
     resized_faces = [cv.resize(f, (128, 128), interpolation=cv.INTER_CUBIC) for f in gray_faces]
     hog_faces = [extract_hog(f) for f in resized_faces]
     predictions = clf.predict(hog_faces)
+    
+    #Bounding boxes
     boxed_frame = apply_boxes(img, result, predictions)
-    end = time.time()
-    cv.putText(boxed_frame, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
+
+    #Finish
     key = cv.waitKey(20)
     if key == 27:
         break
-    cv.imshow("image", boxed_frame)  
-print("Inference finished.")
+    end = time.time()
+
+    #Show
+    cv.putText(boxed_frame, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
+    cv.imshow("image", boxed_frame) 
+
+cv.destroyWindow("preview")
+print("Stop.")
