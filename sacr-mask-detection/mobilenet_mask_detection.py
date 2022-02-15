@@ -32,7 +32,7 @@ clf = load_model("mobilenet-face-mask-detection-model")
 print("Classifier loaded.")
 
 #Extract video frames
-frames = get_video_frames("video/room4-sparse.mp4", target_size = TARGET_SIZE, inc = 30)[:500]
+frames = get_video_frames("video/lab-middle.mp4", target_size = TARGET_SIZE, inc = 30)[:500]
 print("Frames extracted.")
 print("Frames: ", len(frames))
 
