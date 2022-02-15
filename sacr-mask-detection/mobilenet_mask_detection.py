@@ -9,7 +9,8 @@ from modules.models import RetinaFaceModel
 from modules.utils import pad_input_image, recover_pad_output
 from utilities import apply_boxes, extract_hog, get_faces, get_video_frames, save_video, load_yaml
 
-TARGET_SIZE = (1000, 562)
+#TARGET_SIZE = (1000, 562)
+TARGET_SIZE = (562, 1000)
 
 #Build model using SSD-MobileNetV2
 config = load_yaml("configs/retinaface_mbv2.yaml")
@@ -32,7 +33,7 @@ clf = load_model("mobilenet-face-mask-detection-model")
 print("Classifier loaded.")
 
 #Extract video frames
-frames = get_video_frames("video/lab-middle.mp4", target_size = TARGET_SIZE, inc = 30)[:500]
+frames = get_video_frames("video/lab-middle.mp4", target_size = TARGET_SIZE, inc = 30)[500:]
 print("Frames extracted.")
 print("Frames: ", len(frames))
 
@@ -48,18 +49,21 @@ for i, frame in enumerate(frames):
     result = recover_pad_output(prediction, padding)
     img = cv.cvtColor(frames[i], cv.COLOR_RGB2BGR)
     faces = get_faces(img, result, margin = 20)
-    resized_faces = np.array([cv.resize(f, (224, 224), interpolation=cv.INTER_CUBIC) for f in faces])
-    processed_faces = mobilenet.preprocess_input(resized_faces)
-    predictions = [np.argmax(r) for r in clf.predict(processed_faces)]
-    boxed_frame = apply_boxes(img, result, predictions)
-    end = time.time()
-    _img = np.array(boxed_frame)
-    boxed_frames.append(boxed_frame)
-    cv.putText(_img, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
+    if len(faces) > 0:
+        resized_faces = np.array([cv.resize(f, (224, 224), interpolation=cv.INTER_CUBIC) for f in faces])
+        processed_faces = mobilenet.preprocess_input(resized_faces)
+        predictions = [np.argmax(r) for r in clf.predict(processed_faces)]
+        boxed_frame = apply_boxes(img, result, predictions)
+        _img = np.array(boxed_frame)
+        boxed_frames.append(boxed_frame)
+        end = time.time() 
+        cv.putText(_img, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
+    else:
+        _img = np.array(frame)
     key = cv.waitKey(20)
     if key == 27:
         break
-    cv.imshow("image", _img)  
+    cv.imshow("image", _img) 
 print("Inference finished.")
 
 #Save video
