@@ -9,8 +9,7 @@ from modules.models import RetinaFaceModel
 from modules.utils import pad_input_image, recover_pad_output
 from utilities import apply_boxes, extract_hog, get_faces, get_video_frames, save_video, load_yaml
 
-#TARGET_SIZE = (1000, 562)
-TARGET_SIZE = (562, 1000)
+TARGET_SIZE = (1000, 562)
 
 #Build model using SSD-MobileNetV2
 config = load_yaml("configs/retinaface_mbv2.yaml")
@@ -31,13 +30,16 @@ print("Checkpoints loaded.")
 #Load face mask classifier
 clf = load_model("mobilenet-face-mask-detection-model")
 print("Classifier loaded.")
+#clf = load_model("models/resnet50.h5")
+#print("Classifier loaded.")
 
 #Extract video frames
-frames = get_video_frames("video/lab-middle.mp4", target_size = TARGET_SIZE, inc = 30)[500:]
+frames = get_video_frames("video/room6-short.mp4", target_size = TARGET_SIZE, inc = 15)[180:]
 print("Frames extracted.")
 print("Frames: ", len(frames))
 
 cv.namedWindow("preview")
+cv.namedWindow("face")
 
 #Inference
 boxed_frames = []
@@ -48,8 +50,10 @@ for i, frame in enumerate(frames):
     prediction = model(padded_frame[np.newaxis, ...]).numpy()
     result = recover_pad_output(prediction, padding)
     img = cv.cvtColor(frames[i], cv.COLOR_RGB2BGR)
-    faces = get_faces(img, result, margin = 20)
+    faces = get_faces(img, result, margin = 5)
     if len(faces) > 0:
+        for j, face in enumerate(faces):
+            cv.imwrite("faces/"+str(i)+str(j)+".jpg", face)
         resized_faces = np.array([cv.resize(f, (224, 224), interpolation=cv.INTER_CUBIC) for f in faces])
         processed_faces = mobilenet.preprocess_input(resized_faces)
         predictions = [np.argmax(r) for r in clf.predict(processed_faces)]
@@ -63,7 +67,8 @@ for i, frame in enumerate(frames):
     key = cv.waitKey(20)
     if key == 27:
         break
-    cv.imshow("image", _img) 
+    cv.imshow("face", cv.resize(faces[0], (224, 224), interpolation=cv.INTER_CUBIC))
+    cv.imshow("preview", _img) 
 print("Inference finished.")
 
 #Save video

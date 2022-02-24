@@ -1,8 +1,11 @@
 import cv2 as cv
 import numpy as np
 import yaml
+import time
 
 from skimage.feature import hog
+from keras.applications import mobilenet_v2 as mobilenet
+from modules.utils import pad_input_image, recover_pad_output
 
 classes_color = {
     "0": (0, 0, 255),
@@ -64,7 +67,7 @@ def get_faces(img, bboxes, margin = 15):
         x1 = max(0, int(bbox[0] * w) - margin)
         y1 = max(0, int(bbox[1] * h) - margin)
         x2 = min(w, int(bbox[2] * w) + margin)
-        y2 = min(h, int(bbox[3] * h) + margin)
+        y2 = min(h, int(bbox[3] * h))
         subimg = img[y1:y2, x1:x2]
         images.append(subimg)
     return images
@@ -88,3 +91,37 @@ def tf_init():
     sess = tf.Session(config=config)
     # set this TensorFlow session as the default session for Keras
     set_session(sess)
+
+def facemask_detect(frame, model, clf, clf_type):
+    #Start
+    start = time.time()
+    
+    #Preprocess frame
+    frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+    padded_frame, padding = pad_input_image(frame, 32)
+    
+    #Face inference
+    prediction = model(padded_frame[np.newaxis, ...]).numpy()
+    result = recover_pad_output(prediction, padding)
+    img = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+    
+    #Mask classification
+    faces = get_faces(img, result)
+    if len(faces) > 0:
+        if clf_type == "svm":
+            gray_faces = [cv.cvtColor(f, cv.COLOR_BGR2GRAY) for f in faces]
+            resized_faces = [cv.resize(f, (128, 128), interpolation=cv.INTER_CUBIC) for f in gray_faces]
+            hog_faces = [extract_hog(f) for f in resized_faces]
+            predictions = clf.predict(hog_faces)
+        else:
+            resized_faces = np.array([cv.resize(f, (224, 224), interpolation=cv.INTER_CUBIC) for f in faces])
+            processed_faces = mobilenet.preprocess_input(resized_faces)
+            predictions = [np.argmax(r) for r in clf.predict(processed_faces)]
+        boxed_frame = apply_boxes(img, result, predictions)
+        _img = np.array(boxed_frame)
+        end = time.time() 
+        cv.putText(_img, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))
+        return _img
+    else:
+        _img = np.array(frame)
+        return _img
