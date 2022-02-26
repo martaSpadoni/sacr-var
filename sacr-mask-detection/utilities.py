@@ -4,7 +4,7 @@ import yaml
 import time
 
 from skimage.feature import hog
-from keras.applications import mobilenet_v2 as mobilenet
+from tensorflow.keras.applications import mobilenet_v2 as mobilenet
 from modules.utils import pad_input_image, recover_pad_output
 
 classes_color = {
@@ -26,18 +26,10 @@ def get_video_frames(video_path, target_size, rotate_right=False, inc = None):
         ret, fr = vid.read()
         if ret == True:
             if target_size is not None:
-                fr = cv.resize(fr, target_size)
+                fr = cv.resize(fr, target_size, interpolation=cv.INTER_CUBIC)
             if rotate_right:
                 fr = cv.rotate(fr, cv.cv2.ROTATE_90_CLOCKWISE)
-            hsv = cv.cvtColor(fr, cv.COLOR_BGR2HSV)
-            h, s, v = cv.split(hsv)
-            if inc is not None:
-                lim = 255 - inc
-                v[v > lim] = 255
-                v[v <= lim] += inc
-                hsv = cv.merge((h,s,v))
-                fr = cv.cvtColor(hsv, cv.COLOR_HSV2BGR)
-            fr = cv.cvtColor(fr, cv.COLOR_BGR2RGB)
+            #fr = cv.cvtColor(fr, cv.COLOR_BGR2RGB)
             frames.append(fr)
         else:
             break
@@ -49,7 +41,7 @@ def extract_hog(image, ppc = 16):
     features, _ = hog(image, orientations=8, pixels_per_cell=(ppc,ppc), cells_per_block=(4, 4), block_norm='L2', visualize=True)
     return features
 
-def apply_boxes(img, labels, predictions, margin = 10):
+def apply_boxes(img, labels, predictions, margin = 5):
     _img = np.array(img)
     h, w, _ = _img.shape
     for label, pred in zip(labels, predictions):
@@ -60,7 +52,7 @@ def apply_boxes(img, labels, predictions, margin = 10):
         cv.rectangle(_img, (x1,y1), (x2,y2), classes_color[str(pred)], 2)
     return _img
 
-def get_faces(img, bboxes, margin = 15):
+def get_faces(img, bboxes, margin = 5):
     images = []
     h, w, _ = img.shape
     for bbox in bboxes:
@@ -97,16 +89,17 @@ def facemask_detect(frame, model, clf, clf_type):
     start = time.time()
     
     #Preprocess frame
-    frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+    #frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+    #frame = cv.convertScaleAbs(frame, alpha=2, beta=50)
     padded_frame, padding = pad_input_image(frame, 32)
     
     #Face inference
     prediction = model(padded_frame[np.newaxis, ...]).numpy()
     result = recover_pad_output(prediction, padding)
-    img = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+    #img = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
     
     #Mask classification
-    faces = get_faces(img, result)
+    faces = get_faces(frame, result)
     if len(faces) > 0:
         if clf_type == "svm":
             gray_faces = [cv.cvtColor(f, cv.COLOR_BGR2GRAY) for f in faces]
@@ -117,7 +110,8 @@ def facemask_detect(frame, model, clf, clf_type):
             resized_faces = np.array([cv.resize(f, (224, 224), interpolation=cv.INTER_CUBIC) for f in faces])
             processed_faces = mobilenet.preprocess_input(resized_faces)
             predictions = [np.argmax(r) for r in clf.predict(processed_faces)]
-        boxed_frame = apply_boxes(img, result, predictions)
+        #frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+        boxed_frame = apply_boxes(frame, result, predictions)
         _img = np.array(boxed_frame)
         end = time.time() 
         cv.putText(_img, "fps: %.2f" % (1 / (end - start)), (0, 40), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0))

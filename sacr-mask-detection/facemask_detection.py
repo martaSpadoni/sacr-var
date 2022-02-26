@@ -38,7 +38,7 @@ if classifier == "svm":
     with open("models/SVC-model.pkl", 'rb') as file:
         clf = pickle.load(file)    
 else:
-    clf = load_model("mobilenet-face-mask-detection-model")
+    clf = load_model("mobilenet_epoch-08_loss-0.0027_val_loss-0.1257.h5")
 print("Classifier loaded.")
 
 #Create preview window
@@ -83,7 +83,7 @@ else:
             break
 
         #Show
-        cv.imshow(preview_name, cv.cvtColor(img, cv.COLOR_RGB2BGR)) 
+        cv.imshow(preview_name, img) 
 
 cv.destroyWindow(preview_name)
 print("Stop.")
