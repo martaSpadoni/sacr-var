@@ -14,25 +14,10 @@ TARGET_SIZE = (1000, 562)
 video = "webcam" if len(sys.argv) < 3 else sys.argv[1]
 classifier = "ssd" if len(sys.argv) < 3 else sys.argv[2]
 
-#Build model using SSD-MobileNetV2
-print("Build model using SSD-MobileNetV2")
-#config = load_yaml("configs/retinaface_mbv2.yaml")
-#model = RetinaFaceModel(config, training = False, iou_th = 0.5, score_th = 0.7)
-print("Model built.")
-
-#Load weights of Wider-Face trained network
-print("Load weights of Wider-Face trained network")
-#checkpoints = "./checkpoints/retinaface_mbv2"
-#checkpoint = tf.train.Checkpoint(model = model)
-#if tf.train.latest_checkpoint(checkpoints):
-#    print("Loading checkpoints...")
-#    checkpoint.restore(tf.train.latest_checkpoint(checkpoints))
-#else:
-#    print("Cannot find checkpoints.")
-#    exit()
+#Load face detection model: SSD-MobileNetV2
+print("Load face detection model")
 model = load_model("retinaface-model")
-print("Checkpoints loaded.")
-#model.save("retinaface-model")
+print("Face detection model loaded.")
 
 #Load face mask classifier
 print("Load face mask classifier")
