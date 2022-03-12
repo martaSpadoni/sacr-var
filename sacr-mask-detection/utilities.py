@@ -18,7 +18,7 @@ def load_yaml(load_path):
         loaded = yaml.load(f, Loader=yaml.Loader)
     return loaded
 
-def get_video_frames(video_path, target_size, rotate_right=False, inc = None):
+def get_video_frames(video_path, target_size, rotate_right=False):
     vid = cv.VideoCapture(video_path)
     frames = []
 
@@ -29,7 +29,6 @@ def get_video_frames(video_path, target_size, rotate_right=False, inc = None):
                 fr = cv.resize(fr, target_size, interpolation=cv.INTER_CUBIC)
             if rotate_right:
                 fr = cv.rotate(fr, cv.cv2.ROTATE_90_CLOCKWISE)
-            #fr = cv.cvtColor(fr, cv.COLOR_BGR2RGB)
             frames.append(fr)
         else:
             break
@@ -84,7 +83,7 @@ def tf_init():
     # set this TensorFlow session as the default session for Keras
     set_session(sess)
 
-def facemask_detect(frame, model, clf, clf_type):
+def facemask_detect(frame, i, model, clf, clf_type):
     #Start
     start = time.time()
     
@@ -101,6 +100,8 @@ def facemask_detect(frame, model, clf, clf_type):
     #Mask classification
     faces = get_faces(frame, result)
     if len(faces) > 0:
+        for j, face in enumerate(faces):
+            cv.imwrite("faces2/"+str(i)+str(j)+".png", face)
         if clf_type == "svm":
             gray_faces = [cv.cvtColor(f, cv.COLOR_BGR2GRAY) for f in faces]
             resized_faces = [cv.resize(f, (128, 128), interpolation=cv.INTER_CUBIC) for f in gray_faces]
