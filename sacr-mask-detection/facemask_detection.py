@@ -6,7 +6,7 @@ import sys
 import pickle
 
 from tensorflow.keras.models import load_model
-from utilities import load_yaml, facemask_detect, get_video_frames
+from utilities import facemask_detect, get_video_frames
 
 TARGET_SIZE = (1000, 562)
 
@@ -24,7 +24,6 @@ if classifier == "svm":
     with open("models/SVC-model.pkl", 'rb') as file:
         clf = pickle.load(file)    
 else:
-    #clf = load_model("mobilenet-face-mask-detection-model")
     clf = load_model("models/mobilenet_epoch-19_loss-0.0002_val_loss-0.0057.h5")
 print("Classifier loaded.")
 
