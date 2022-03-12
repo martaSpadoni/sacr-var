@@ -6,7 +6,6 @@ import sys
 import pickle
 
 from tensorflow.keras.models import load_model
-from modules.models import RetinaFaceModel
 from utilities import load_yaml, facemask_detect, get_video_frames
 
 TARGET_SIZE = (1000, 562)
@@ -16,7 +15,7 @@ classifier = "ssd" if len(sys.argv) < 3 else sys.argv[2]
 
 #Load face detection model: SSD-MobileNetV2
 print("Load face detection model")
-model = load_model("retinaface-model")
+model = load_model("models/retinaface-model")
 print("Face detection model loaded.")
 
 #Load face mask classifier
