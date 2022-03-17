@@ -5,7 +5,6 @@ import time
 
 from skimage.feature import hog
 from tensorflow.keras.applications import mobilenet_v2 as mobilenet
-from modules.utils import pad_input_image, recover_pad_output
 
 classes_color = {
     "0": (0, 0, 255),
@@ -17,6 +16,35 @@ def load_yaml(load_path):
     with open(load_path, 'r') as f:
         loaded = yaml.load(f, Loader=yaml.Loader)
     return loaded
+
+def pad_input_image(img, max_steps):
+    """pad image to suitable shape"""
+    img_h, img_w, _ = img.shape
+
+    img_pad_h = 0
+    if img_h % max_steps > 0:
+        img_pad_h = max_steps - img_h % max_steps
+
+    img_pad_w = 0
+    if img_w % max_steps > 0:
+        img_pad_w = max_steps - img_w % max_steps
+
+    padd_val = np.mean(img, axis=(0, 1)).astype(np.uint8)
+    img = cv.copyMakeBorder(img, 0, img_pad_h, 0, img_pad_w,
+                             cv.BORDER_CONSTANT, value=padd_val.tolist())
+    pad_params = (img_h, img_w, img_pad_h, img_pad_w)
+
+    return img, pad_params
+
+
+def recover_pad_output(outputs, pad_params):
+    """recover the padded output effect"""
+    img_h, img_w, img_pad_h, img_pad_w = pad_params
+    recover_xy = np.reshape(outputs[:, :14], [-1, 7, 2]) * \
+        [(img_pad_w + img_w) / img_w, (img_pad_h + img_h) / img_h]
+    outputs[:, :14] = np.reshape(recover_xy, [-1, 14])
+
+    return outputs
 
 def get_video_frames(video_path, target_size, rotate_right=False):
     vid = cv.VideoCapture(video_path)
